@@ -1,5 +1,12 @@
 {
   "presets": ["env", "stage-2"],
+  "env": {
+    "test": {
+      "presets": [
+        ["env", { "targets": { "node": "current" }}]
+      ]
+    }
+  },
   "plugins": ["transform-runtime"],
   "comments": false
 }
