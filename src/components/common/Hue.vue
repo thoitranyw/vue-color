@@ -12,14 +12,18 @@
 </template>
 
 <script>
+import colorMixin from '../../mixin/color'
+
 export default {
   name: 'Hue',
+  mixins: [colorMixin],
   props: {
-    color: Object,
     direction: {
       type: String,
-      // [horizontal | vertical]
-      default: 'horizontal'
+      default: 'horizontal',
+      validator (value) {
+        return value === 'horizontal' || value === 'vertical'
+      }
     }
   },
   data () {
@@ -30,7 +34,7 @@ export default {
   },
   watch: {
     color () {
-      const h = this.color.hsl.h
+      const h = this.$data._color.hsl.h
       if (h !== 0 && h - this.oldHue > 0) this.pullDirection = 'right'
       if (h !== 0 && h - this.oldHue < 0) this.pullDirection = 'left'
       this.oldHue = h
@@ -45,8 +49,9 @@ export default {
     },
     pointerTop () {
       if (this.direction === 'vertical') {
-        if (this.color.hsl.h === 0 && this.pullDirection === 'right') return 0
-        return -((this.color.hsl.h * 100) / 360) + 100 + '%'
+        const { hsl } = this.$data._color
+        if (hsl.h === 0 && this.pullDirection === 'right') return 0
+        return -((hsl.h * 100) / 360) + 100 + '%'
       } else {
         return 0
       }
@@ -55,8 +60,9 @@ export default {
       if (this.direction === 'vertical') {
         return 0
       } else {
-        if (this.color.hsl.h === 0 && this.pullDirection === 'right') return '100%'
-        return (this.color.hsl.h * 100) / 360 + '%'
+        const { hsl } = this.$data._color
+        if (hsl.h === 0 && this.pullDirection === 'right') return '100%'
+        return (hsl.h * 100) / 360 + '%'
       }
     }
   },
@@ -64,19 +70,21 @@ export default {
     handleChange (e, skip) {
       !skip && e.preventDefault()
 
-      var container = this.$refs.container
-      var containerWidth = container.clientWidth
-      var containerHeight = container.clientHeight
+      const container = this.$refs.container
+      const containerWidth = container.clientWidth
+      const containerHeight = container.clientHeight
 
-      var xOffset = container.getBoundingClientRect().left + window.pageXOffset
-      var yOffset = container.getBoundingClientRect().top + window.pageYOffset
-      var pageX = e.pageX || (e.touches ? e.touches[0].pageX : 0)
-      var pageY = e.pageY || (e.touches ? e.touches[0].pageY : 0)
-      var left = pageX - xOffset
-      var top = pageY - yOffset
+      const xOffset = container.getBoundingClientRect().left + window.pageXOffset
+      const yOffset = container.getBoundingClientRect().top + window.pageYOffset
+      const pageX = e.pageX || (e.touches ? e.touches[0].pageX : 0)
+      const pageY = e.pageY || (e.touches ? e.touches[0].pageY : 0)
+      const left = pageX - xOffset
+      const top = pageY - yOffset
 
-      var h
-      var percent
+      let h = 0
+      let percent = 0
+
+      const { hsl } = this.$data._color
 
       if (this.direction === 'vertical') {
         if (top < 0) {
@@ -88,12 +96,12 @@ export default {
           h = (360 * percent / 100)
         }
 
-        if (this.color.hsl.h !== h) {
-          this.$emit('change', {
+        if (hsl.h !== h) {
+          this.colorChange({
             h: h,
-            s: this.color.hsl.s,
-            l: this.color.hsl.l,
-            a: this.color.hsl.a,
+            s: hsl.s,
+            l: hsl.l,
+            a: hsl.a,
             source: 'hsl'
           })
         }
@@ -107,12 +115,12 @@ export default {
           h = (360 * percent / 100)
         }
 
-        if (this.color.hsl.h !== h) {
-          this.$emit('change', {
+        if (hsl.h !== h) {
+          this.colorChange({
             h: h,
-            s: this.color.hsl.s,
-            l: this.color.hsl.l,
-            a: this.color.hsl.a,
+            s: hsl.s,
+            l: hsl.l,
+            a: hsl.a,
             source: 'hsl'
           })
         }

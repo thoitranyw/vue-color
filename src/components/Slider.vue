@@ -1,7 +1,7 @@
 <template>
   <div class="vc-slider">
     <div class="vc-slider-hue-warp">
-      <hue :color="$data._color" @change="hueChange"></hue>
+      <hue :color="color" @change="hueChange"></hue>
     </div>
     <div class="vc-slider-swatches">
       <div class="vc-slider-swatch" v-for="(offset, index) in swatches" :key="index" :data-index="index"
