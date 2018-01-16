@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Hue.vue renders correctly 1`] = `
+<div class="vc-hue vc-hue--horizontal">
+    <div class="vc-hue-container">
+        <div class="vc-hue-pointer" style="top:0;left:41.666666666666664%;">
+            <div class="vc-hue-picker"></div>
+        </div>
+    </div>
+</div>
+`;
