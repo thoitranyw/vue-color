@@ -2,9 +2,8 @@
   <div :class="['vc-hue', directionClass]">
     <div class="vc-hue-container" ref="container"
       @mousedown="handleMouseDown"
-      @touchmove="handleChange"
-      @touchstart="handleChange">
-      <div class="vc-hue-pointer" :style="{top: pointerTop, left: pointerLeft}">
+      @touchstart="handleMouseDown">
+      <div class="vc-hue-pointer" :style="pointerStyle">
         <div class="vc-hue-picker"></div>
       </div>  
     </div>
@@ -13,6 +12,8 @@
 
 <script>
 import colorMixin from '../../mixin/color'
+
+const RANGE = 360
 
 export default {
   name: 'Hue',
@@ -29,115 +30,152 @@ export default {
   data () {
     return {
       oldHue: 0,
-      pullDirection: ''
+      dragDirection: '',
+
+      containerSize: 1,
+
+      startX: 0,
+      currentX: 0,
+      startY: 0,
+      currentY: 0,
+      startPosition: 0,
+      dragging: false
     }
   },
   watch: {
     color () {
       const h = this.$data._color.hsl.h
-      if (h !== 0 && h - this.oldHue > 0) this.pullDirection = 'right'
-      if (h !== 0 && h - this.oldHue < 0) this.pullDirection = 'left'
+      if (h !== 0 && h - this.oldHue > 0) this.dragDirection = 1
+      if (h !== 0 && h - this.oldHue < 0) this.dragDirection = -1
       this.oldHue = h
     }
   },
   computed: {
+    vertical () {
+      return this.direction === 'vertical'
+    },
     directionClass () {
       return {
-        'vc-hue--horizontal': this.direction === 'horizontal',
-        'vc-hue--vertical': this.direction === 'vertical'
+        'vc-hue--horizontal': !this.vertical,
+        'vc-hue--vertical': this.vertical
       }
     },
-    pointerTop () {
-      if (this.direction === 'vertical') {
-        const { hsl } = this.$data._color
-        if (hsl.h === 0 && this.pullDirection === 'right') return 0
-        return -((hsl.h * 100) / 360) + 100 + '%'
-      } else {
-        return 0
-      }
+    pointerPosition () {
+      const { hsl: { h } } = this.$data._color
+      if (h > 0 && h < RANGE) return `${(h / RANGE) * 100}%`
+      if (h === 0 && this.dragDirection === 1) return '100%'
+      return '0%'
     },
-    pointerLeft () {
-      if (this.direction === 'vertical') {
-        return 0
-      } else {
-        const { hsl } = this.$data._color
-        if (hsl.h === 0 && this.pullDirection === 'right') return '100%'
-        return (hsl.h * 100) / 360 + '%'
-      }
+    pointerStyle () {
+      return this.vertical ? { bottom: this.pointerPosition } : { left: this.pointerPosition }
     }
   },
   methods: {
-    handleChange (e, skip) {
-      !skip && e.preventDefault()
+    handleChange (percent) {
+      this.resetSize()
 
-      const container = this.$refs.container
-      const containerWidth = container.clientWidth
-      const containerHeight = container.clientHeight
-
-      const xOffset = container.getBoundingClientRect().left + window.pageXOffset
-      const yOffset = container.getBoundingClientRect().top + window.pageYOffset
-      const pageX = e.pageX || (e.touches ? e.touches[0].pageX : 0)
-      const pageY = e.pageY || (e.touches ? e.touches[0].pageY : 0)
-      const left = pageX - xOffset
-      const top = pageY - yOffset
-
-      let h = 0
-      let percent = 0
+      if (percent > 100) percent = 100
+      if (percent < 0) percent = 0
 
       const { hsl } = this.$data._color
+      const h = (RANGE * percent / 100)
 
-      if (this.direction === 'vertical') {
-        if (top < 0) {
-          h = 360
-        } else if (top > containerHeight) {
-          h = 0
-        } else {
-          percent = -(top * 100 / containerHeight) + 100
-          h = (360 * percent / 100)
-        }
+      if (hsl.h !== h) {
+        this.colorChange({
+          h: h,
+          s: hsl.s,
+          l: hsl.l,
+          a: hsl.a,
+          source: 'hsl'
+        })
+      }
+    },
+    handleSliderClick (e, skip) {
+      !skip && e.preventDefault()
 
-        if (hsl.h !== h) {
-          this.colorChange({
-            h: h,
-            s: hsl.s,
-            l: hsl.l,
-            a: hsl.a,
-            source: 'hsl'
-          })
-        }
+      const $container = this.$refs.container
+
+      const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY
+      const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX
+
+      if (this.vertical) {
+        const sliderOffsetBottom = $container.getBoundingClientRect().bottom
+        this.handleChange((sliderOffsetBottom - clientY) / this.containerSize * 100)
       } else {
-        if (left < 0) {
-          h = 0
-        } else if (left > containerWidth) {
-          h = 360
-        } else {
-          percent = left * 100 / containerWidth
-          h = (360 * percent / 100)
-        }
-
-        if (hsl.h !== h) {
-          this.colorChange({
-            h: h,
-            s: hsl.s,
-            l: hsl.l,
-            a: hsl.a,
-            source: 'hsl'
-          })
-        }
+        const sliderOffsetLeft = $container.getBoundingClientRect().left
+        this.handleChange((clientX - sliderOffsetLeft) / this.containerSize * 100)
       }
     },
     handleMouseDown (e) {
-      this.handleChange(e, true)
-      window.addEventListener('mousemove', this.handleChange)
-      window.addEventListener('mouseup', this.handleMouseUp)
+      e.preventDefault()
+
+      this.handleSliderClick(e)
+
+      this.onDragStart(e)
+
+      window.addEventListener('mousemove', this.onDragging)
+      window.addEventListener('touchmove', this.onDragging)
+
+      window.addEventListener('mouseup', this.onDragEnd)
+      window.addEventListener('touchend', this.onDragEnd)
+
+      window.addEventListener('contextmenu', this.onDragEnd)
     },
-    handleMouseUp (e) {
-      this.unbindEventListeners()
+    onDragStart (e) {
+      const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY
+      const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX
+
+      if (this.vertical) {
+        this.startY = clientY
+      } else {
+        this.startX = clientX
+      }
+      this.dragging = true
+      this.startPosition = parseFloat(this.pointerPosition)
+
+      this.handleSliderClick(e)
     },
-    unbindEventListeners () {
-      window.removeEventListener('mousemove', this.handleChange)
-      window.removeEventListener('mouseup', this.handleMouseUp)
+    onDragging (e) {
+      const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY
+      const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX
+
+      const { vertical, dragging, containerSize, startX, startY, startPosition } = this
+      if (dragging) {
+        let diff = 0
+        if (vertical) {
+          diff = ((startY - clientY) / containerSize) * 100
+        } else {
+          diff = ((clientX - startX) / containerSize) * 100
+        }
+
+        const newPosition = startPosition + diff
+        this.handleChange(newPosition)
+      }
+    },
+    onDragEnd () {
+      if (this.dragging) {
+        this.dragging = false
+        window.removeEventListener('mousemove', this.onDragging)
+        window.removeEventListener('touchmove', this.onDragging)
+
+        window.removeEventListener('mouseup', this.onDragEnd)
+        window.removeEventListener('touchend', this.onDragEnd)
+
+        window.removeEventListener('contextmenu', this.onDragEnd)
+      }
+    },
+    resetSize () {
+      if (this.$refs.container) {
+        this.containerSize = this.$refs.container[`client${this.vertical ? 'Height' : 'Width'}`]
+      }
     }
+  },
+  mounted () {
+    this.resetSize()
+    window.addEventListener('resize', this.resetSize)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.resetSize)
   }
 }
 </script>
@@ -162,6 +200,7 @@ export default {
   margin: 0 2px;
   position: relative;
   height: 100%;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 .vc-hue-pointer {
   z-index: 2;
@@ -175,6 +214,9 @@ export default {
   height: 8px;
   box-shadow: 0 0 2px rgba(0, 0, 0, .6);
   background: #fff;
-  transform: translateX(-2px) ;
+  transform: translate(-2px, 0);
+}
+.vc-hue--vertical .vc-hue-picker {
+  transform: translate(-2px, 3px);
 }
 </style>
