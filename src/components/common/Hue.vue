@@ -12,6 +12,7 @@
 
 <script>
 import colorMixin from '../../mixin/color'
+import throttle from 'lodash.throttle'
 
 const RANGE = 360
 
@@ -29,9 +30,7 @@ export default {
   },
   data () {
     return {
-      oldHue: 0,
-      dragDirection: '',
-
+      percent: 0,
       containerSize: 1,
 
       startX: 0,
@@ -40,14 +39,6 @@ export default {
       currentY: 0,
       startPosition: 0,
       dragging: false
-    }
-  },
-  watch: {
-    color () {
-      const h = this.$data._color.hsl.h
-      if (h !== 0 && h - this.oldHue > 0) this.dragDirection = 1
-      if (h !== 0 && h - this.oldHue < 0) this.dragDirection = -1
-      this.oldHue = h
     }
   },
   computed: {
@@ -63,7 +54,7 @@ export default {
     pointerPosition () {
       const { hsl: { h } } = this.$data._color
       if (h > 0 && h < RANGE) return `${(h / RANGE) * 100}%`
-      if (h === 0 && this.dragDirection === 1) return '100%'
+      if (h === 0 && this.percent === 100) return '100%'
       return '0%'
     },
     pointerStyle () {
@@ -71,14 +62,17 @@ export default {
     }
   },
   methods: {
+    throttled: fn => throttle(fn, 30, { leading: true, trailing: false }),
     handleChange (percent) {
-      this.resetSize()
-
       if (percent > 100) percent = 100
       if (percent < 0) percent = 0
 
       const { hsl } = this.$data._color
-      const h = (RANGE * percent / 100)
+      let h = (RANGE * percent / 100)
+
+      if (h === 360) h = 359 // in order to prevent pointer moving in circle
+
+      this.percent = percent
 
       if (hsl.h !== h) {
         this.colorChange({
@@ -113,13 +107,14 @@ export default {
 
       this.onDragStart(e)
 
-      window.addEventListener('mousemove', this.onDragging)
-      window.addEventListener('touchmove', this.onDragging)
-
-      window.addEventListener('mouseup', this.onDragEnd)
-      window.addEventListener('touchend', this.onDragEnd)
-
-      window.addEventListener('contextmenu', this.onDragEnd)
+      if (e.touches) {
+        window.addEventListener('touchmove', this.throttledOnDragging)
+        window.addEventListener('touchend', this.throttledOnDragEnd)
+      } else {
+        window.addEventListener('mousemove', this.throttledOnDragging)
+        window.addEventListener('mouseup', this.throttledOnDragEnd)
+        window.addEventListener('contextmenu', this.throttledOnDragEnd)
+      }
     },
     onDragStart (e) {
       const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY
@@ -132,7 +127,6 @@ export default {
       }
       this.dragging = true
       this.startPosition = parseFloat(this.pointerPosition)
-
       this.handleSliderClick(e)
     },
     onDragging (e) {
@@ -147,7 +141,6 @@ export default {
         } else {
           diff = ((clientX - startX) / containerSize) * 100
         }
-
         const newPosition = startPosition + diff
         this.handleChange(newPosition)
       }
@@ -155,13 +148,13 @@ export default {
     onDragEnd () {
       if (this.dragging) {
         this.dragging = false
-        window.removeEventListener('mousemove', this.onDragging)
-        window.removeEventListener('touchmove', this.onDragging)
+        window.removeEventListener('mousemove', this.throttledOnDragging)
+        window.removeEventListener('touchmove', this.throttledOnDragging)
 
-        window.removeEventListener('mouseup', this.onDragEnd)
-        window.removeEventListener('touchend', this.onDragEnd)
+        window.removeEventListener('mouseup', this.throttledOnDragEnd)
+        window.removeEventListener('touchend', this.throttledOnDragEnd)
 
-        window.removeEventListener('contextmenu', this.onDragEnd)
+        window.removeEventListener('contextmenu', this.throttledOnDragEnd)
       }
     },
     resetSize () {
@@ -172,10 +165,15 @@ export default {
   },
   mounted () {
     this.resetSize()
-    window.addEventListener('resize', this.resetSize)
+    const throttled = this.throttled
+    this.throttledResetSize = throttled(this.resetSize)
+    window.addEventListener('resize', this.throttledResetSize)
+
+    this.throttledOnDragging = throttled(this.onDragging)
+    this.throttledOnDragEnd = throttled(this.onDragEnd)
   },
   beforeDestroy () {
-    window.removeEventListener('resize', this.resetSize)
+    window.removeEventListener('resize', this.throttledResetSize)
   }
 }
 </script>
