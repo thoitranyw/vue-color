@@ -60,7 +60,8 @@ export default {
   data () {
     const _color = _colorChange(this.color)
     return {
-      _color
+      _color,
+      oldHue: 0
     }
   },
   watch: {

@@ -54,6 +54,7 @@
     "jest": "^22.0.5",
     "jest-serializer-vue": "^0.3.0",
     "ora": "^1.2.0",
+    "random-int": "^1.0.0",
     "shelljs": "^0.7.0",
     "url-loader": "^0.5.7",
     "vue": "^2.5.13",
