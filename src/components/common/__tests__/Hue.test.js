@@ -60,22 +60,19 @@ describe('Hue.vue', () => {
     /* mobile 拖拽:  mousedown(handleMouseDown) -> onDragStart -> onDragging * n -> onDragEnd */
     /* mobile 点击:  touchstart(handleMouseDown) -> onDragStart -> onDragEnd */
 
-    // wrapper.vm.handleSliderClick({ clientX: 60, clientY: 0, preventDefault () {} })
-    // expect(wrapper.vm.$data._color.hsl.h).toBe(216)
+    wrapper.vm.handleSliderClick({ clientX: 60, clientY: 0, preventDefault () {} })
+    expect(wrapper.vm.$data._color.hsl.h).toBe(216)
 
-    // wrapper.vm.handleSliderClick({ clientX: 120, clientY: 0, preventDefault () {} })
-    // expect(Math.floor(wrapper.vm.$data._color.hsl.h)).toBe(359)
+    wrapper.vm.onDragStart({ clientX: 60, clientY: 0, preventDefault () {} })
+    expect(wrapper.vm.$data.startX).toBe(60)
+    expect(wrapper.vm.$data.startPosition).toBe(60)
+    expect(wrapper.vm.$data.dragging).toBe(true)
 
-    // wrapper.vm.handleSliderClick({ clientX: 0, clientY: 0, preventDefault () {} })
-    // wrapper.vm.onDragging({ clientX: 30, clientY: 0, preventDefault () {} })
-    // expect(wrapper.vm.$data._color.hsl.h).toBe(108)
-    // // expect(wrapper.vm.startPosition).toBe(0)
-    // wrapper.vm.onDragEnd()
+    wrapper.vm.onDragging({ clientX: 80, clientY: 0, preventDefault () {} })
+    expect(wrapper.vm.$data._color.hsl.h).toBe(288)
 
-    // wrapper.vm.onDragStart({ clientX: 30, clientY: 0, preventDefault () {} })
-    // wrapper.vm.onDragging({ clientX: -10, clientY: 0, preventDefault () {} })
-    // wrapper.vm.onDragEnd()
-    // expect(wrapper.vm.$data._color.hsl.h).toBe(0)
+    wrapper.vm.onDragEnd()
+    expect(wrapper.vm.$data.dragging).toBe(false)
   })
 
   // test('emit', () => {})
