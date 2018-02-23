@@ -75,5 +75,12 @@ describe('Hue.vue', () => {
     expect(wrapper.vm.$data.dragging).toBe(false)
   })
 
-  // test('emit', () => {})
+  test('emit', () => {
+    const wrapper = mount(Hue)
+    const stub = jest.fn()
+    wrapper.vm.$on('change', stub)
+    wrapper.vm.handleChange(1)
+
+    expect(stub).toBeCalledWith({'a': 1, 'hex': '#4D1C19', 'hsl': {'a': 1, 'h': 3.6000000000000005, 'l': 0.2, 's': 0.5097999999999999}, 'hsv': {'a': 1, 'h': 3.6000000000000005, 's': 0.6753212346006093, 'v': 0.30196}, 'oldHue': 3.6, 'rgba': {'a': 1, 'b': 25, 'g': 28, 'r': 77}, 'source': 'hsl'})
+  })
 })
