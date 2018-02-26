@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Checkboard.vue renders correctly 1`] = `<div class="vc-checkerboard" style="background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAAM0lEQVQ4jWN89uzZfwY8QFJSEp80AxNeWSLAqAGDwQDG////400Hz58/p60LRg0YDAYAAJKtCsxkMGMsAAAAAElFTkSuQmCC);"></div>`;
