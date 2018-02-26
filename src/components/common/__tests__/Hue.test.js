@@ -1,13 +1,18 @@
-import { mount, shallow } from 'vue-test-utils'
+import { shallow } from 'vue-test-utils'
 import { createRenderer } from 'vue-server-renderer'
 import randomInt from 'random-int'
 
 import Hue from '../Hue'
 
 describe('Hue.vue', () => {
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = shallow(Hue)
+  })
+
   test('renders correctly', () => {
     const renderer = createRenderer()
-    const wrapper = shallow(Hue)
     renderer.renderToString(wrapper.vm, (err, str) => {
       if (err) throw new Error(err)
       expect(str).toMatchSnapshot()
@@ -15,27 +20,23 @@ describe('Hue.vue', () => {
   })
 
   test('has the right class in vertical mode', () => {
-    const wrapper = mount(Hue, {
-      propsData: {
-        direction: 'vertical'
-      }
+    wrapper.setProps({
+      direction: 'vertical'
     })
     expect(wrapper.classes()).toContain('vc-hue--vertical')
   })
 
   test('should not exceed min and max', () => {
-    const wrapper = mount(Hue, {
-      propsData: {
-        direction: 'vertical',
-        color: {
-          h: 0,
-          s: randomInt(100),
-          l: randomInt(100)
-        }
+    wrapper.setProps({
+      direction: 'vertical',
+      color: {
+        h: 0,
+        s: randomInt(100),
+        l: randomInt(100)
       }
     })
-    const pointer = wrapper.find('.vc-hue-pointer')
 
+    const pointer = wrapper.find('.vc-hue-pointer')
     expect(pointer.hasStyle('bottom', '0%')).toBe(true)
 
     wrapper.setProps({
@@ -51,7 +52,6 @@ describe('Hue.vue', () => {
   })
 
   test('drag', () => {
-    const wrapper = mount(Hue)
     wrapper.setData({ containerSize: 100 })
 
     /* --- 触发顺序 -- */
@@ -76,7 +76,6 @@ describe('Hue.vue', () => {
   })
 
   test('emit', () => {
-    const wrapper = mount(Hue)
     const stub = jest.fn()
     wrapper.vm.$on('change', stub)
     wrapper.vm.handleChange(1)
