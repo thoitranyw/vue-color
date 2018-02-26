@@ -16,19 +16,18 @@
 </template>
 
 <script>
+import colorMixin from '../../mixin/color'
 import checkboard from './Checkboard.vue'
 
 export default {
   name: 'Alpha',
-  props: {
-    color: Object
-  },
+  mixins: [colorMixin],
   components: {
     checkboard
   },
   computed: {
     gradientColor () {
-      var rgba = this.color.rgba
+      var rgba = this.$data._color.rgba
       var rgbStr = [rgba.r, rgba.g, rgba.b].join(',')
       return 'linear-gradient(to right, rgba(' + rgbStr + ', 0) 0%, rgba(' + rgbStr + ', 1) 100%)'
     }
@@ -51,14 +50,14 @@ export default {
       } else {
         a = Math.round(left * 100 / containerWidth) / 100
       }
-
-      if (this.color.a !== a) {
-        this.$emit('change', {
-          h: this.color.hsl.h,
-          s: this.color.hsl.s,
-          l: this.color.hsl.l,
-          a: a,
-          source: 'rgba'
+      const color = this.$data._color
+      if (color.a !== a) {
+        this.colorChange({
+          h: color.hsl.h,
+          s: color.hsl.s,
+          l: color.hsl.l,
+          a,
+          source: 'hsl'
         })
       }
     },
