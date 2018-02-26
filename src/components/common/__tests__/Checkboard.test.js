@@ -1,6 +1,5 @@
 import { shallow } from 'vue-test-utils'
 import { createRenderer } from 'vue-server-renderer'
-// import randomInt from 'random-int'
 
 import Checkboard from '../Checkboard'
 
