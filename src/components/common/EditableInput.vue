@@ -1,9 +1,16 @@
 <template>
   <div class="vc-editable-input">
     <input class="vc-input__input"
-      v-model="val"
+      v-if="!isNumber"
+      :value="val"
+      @input="update">
+    <input class="vc-input__input"
+      v-if="isNumber"
+      type="number"
+      :value="val"
       @keydown="handleKeyDown"
       @input="update"
+      @blur="handleBlur"
       ref="input">
     <span class="vc-input__label">{{label}}</span>
     <span class="vc-input__desc">{{desc}}</span>
@@ -25,56 +32,63 @@ export default {
     }
   },
   computed: {
-    val: {
-      get () {
-        return this.value
-      },
-      set (v) {
-        // TODO: min
-        if (!(this.max === undefined) && +v > this.max) {
-          this.$refs.input.value = this.max
-        } else {
-          return v
-        }
-      }
+    val () {
+      return this.value
+    },
+    isNumber () {
+      return typeof this.value === 'number' || !isNaN(Number(this.value))
     }
   },
   methods: {
     update (e) {
-      this.handleChange(e.target.value)
-    },
-    handleChange (newVal) {
-      let data = {}
-      data[this.label] = newVal
-      if (data.hex === undefined && data['#'] === undefined) {
-        this.$emit('change', data)
-      } else if (newVal.length > 5) {
-        this.$emit('change', data)
-      }
-    },
-    handleBlur (e) {
-      console.log(e)
+      const v = e.target.value
+      this.handleChange(v)
     },
     handleKeyDown (e) {
       let val = this.val
       let number = Number(val)
 
-      if (number) {
-        let amount = this.arrowOffset || 1
+      if (typeof val === 'number') {
+        const amount = this.arrowOffset || 1
 
         // Up
         if (e.keyCode === 38) {
-          val = number + amount
-          this.handleChange(val)
+          this.handleChange(number + amount)
           e.preventDefault()
         }
 
         // Down
         if (e.keyCode === 40) {
-          val = number - amount
-          this.handleChange(val)
+          this.handleChange(number - amount)
           e.preventDefault()
         }
+      }
+    },
+    handleChange (value) {
+      let v = value
+
+      if (this.isNumber && !(this.max === undefined) && +v > this.max) {
+        return
+      }
+      if (this.isNumber && !(this.min === undefined) && +v < this.max) {
+        return
+      }
+
+      let data = {}
+      data[this.label] = v
+      if (data.hex === undefined && data['#'] === undefined) {
+        this.$emit('change', data)
+      } else if (value.length > 5) {
+        this.$emit('change', data)
+      }
+    },
+    handleBlur (e) {
+      const value = e.target.value
+      if (this.isNumber && !(this.max === undefined) && +value > this.max) {
+        this.$refs.input.value = this.max
+      }
+      if (this.isNumber && !(this.min === undefined) && +value < this.max) {
+        this.$refs.input.value = this.min
       }
     },
     handleDrag (e) {
@@ -98,5 +112,12 @@ export default {
 }
 .vc-input__label {
   text-transform: capitalize;
+}
+
+.vc-editable-input input::-webkit-outer-spin-button,
+.vc-editable-input input::-webkit-inner-spin-button {
+  /* display: none; <- Crashes Chrome on hover */
+  -webkit-appearance: none;
+  margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
 }
 </style>
