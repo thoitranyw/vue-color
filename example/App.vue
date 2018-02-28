@@ -42,6 +42,10 @@
         <div class="demo-item">
           <compact-picker :color="color" @change="updateValue"></compact-picker>
           <h6>Compact</h6>
+          <br>
+          <br>
+          <grayscale-picker :value="colors" @input="updateValue"></grayscale-picker>
+          <h6>Grayscale</h6>
         </div>
         <div class="demo-item">
           <swatches-picker :color="color" @change="updateValue"></swatches-picker>
@@ -55,6 +59,7 @@
 <script>
 import material from '../src/components/Material.vue'
 import compact from '../src/components/Compact.vue'
+import grayscale from '../src/components/Grayscale.vue'
 import swatches from '../src/components/Swatches.vue'
 import slider from '../src/components/Slider.vue'
 import sketch from '../src/components/Sketch.vue'
@@ -85,6 +90,7 @@ export default {
   components: {
     'material-picker': material,
     'compact-picker': compact,
+    'grayscale-picker': grayscale,
     'swatches-picker': swatches,
     'slider-picker': slider,
     'sketch-picker': sketch,
