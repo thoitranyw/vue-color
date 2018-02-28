@@ -36,7 +36,7 @@ export default {
   },
   computed: {
     pick () {
-      return this.colors.hex
+      return this.color.hex
     }
   },
   methods: {

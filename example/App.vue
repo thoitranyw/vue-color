@@ -44,7 +44,7 @@
           <h6>Compact</h6>
           <br>
           <br>
-          <grayscale-picker :value="colors" @input="updateValue"></grayscale-picker>
+          <grayscale-picker :color="color" @change="updateValue"></grayscale-picker>
           <h6>Grayscale</h6>
         </div>
         <div class="demo-item">
