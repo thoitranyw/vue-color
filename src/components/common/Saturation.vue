@@ -15,24 +15,20 @@
 
 <script>
 import throttle from 'lodash.throttle'
+import colorMixin from '../../mixin/color'
 
 export default {
   name: 'Saturation',
-  props: {
-    color: {
-      type: Object,
-      required: true
-    }
-  },
+  mixins: [colorMixin],
   computed: {
     bgColor () {
-      return `hsl(${this.color.hsv.h}, 100%, 50%)`
+      return `hsl(${this.$data._color.hsv.h}, 100%, 50%)`
     },
     pointerTop () {
-      return (-(this.color.hsv.v * 100) + 1) + 100 + '%'
+      return (-(this.$data._color.hsv.v * 100) + 1) + 100 + '%'
     },
     pointerLeft () {
-      return this.color.hsv.s * 100 + '%'
+      return this.$data._color.hsv.s * 100 + '%'
     }
   },
   methods: {
@@ -72,16 +68,13 @@ export default {
       bright = bright > 0 ? bright : 0
       bright = bright > 1 ? 1 : bright
 
-      this.throttle(this.onChange, {
+      this.throttle(this.colorChange, {
         h: this.color.hsv.h,
         s: saturation,
         v: bright,
         a: this.color.hsv.a,
         source: 'hsva'
       })
-    },
-    onChange (param) {
-      this.$emit('change', param)
     },
     handleMouseDown (e) {
       // this.handleChange(e, true)
