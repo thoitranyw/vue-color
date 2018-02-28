@@ -36,6 +36,9 @@ export default {
       return this.value
     },
     isNumber () {
+      if (typeof this.value === 'string') {
+        return false
+      }
       return typeof this.value === 'number' || !isNaN(Number(this.value))
     }
   },

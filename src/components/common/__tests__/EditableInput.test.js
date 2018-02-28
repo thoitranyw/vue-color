@@ -22,6 +22,38 @@ describe('Checkboard.vue', () => {
     })
   })
 
+  test('checks if value is classified as a Number.', () => {
+    wrapper.setProps({
+      value: 50
+    })
+    expect(wrapper.vm.isNumber).toBe(true)
+
+    wrapper.setProps({
+      value: 0
+    })
+    expect(wrapper.vm.isNumber).toBe(true)
+
+    wrapper.setProps({
+      value: -0.1
+    })
+    expect(wrapper.vm.isNumber).toBe(true)
+
+    wrapper.setProps({
+      value: '#ffffff'
+    })
+    expect(wrapper.vm.isNumber).toBe(false)
+
+    wrapper.setProps({
+      value: '#1E7349'
+    })
+    expect(wrapper.vm.isNumber).toBe(false)
+
+    wrapper.setProps({
+      value: '10%'
+    })
+    expect(wrapper.vm.isNumber).toBe(false)
+  })
+
   test('emit', () => {
     const stub = jest.fn()
     wrapper.vm.$on('change', stub)
