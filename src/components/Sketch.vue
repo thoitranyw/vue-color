@@ -1,49 +1,56 @@
 <template>
-  <div :class="['vc-sketch', disableAlpha ? 'vc-sketch__disable-alpha' : '']">
-    <div class="vc-sketch-saturation-wrap">
-      <saturation v-model="colors" @change="childChange"></saturation>
+  <div class="vc-sketch-container" @blur.self="e => onBlur(e.relatedTarget)" tabindex="0">
+    <div class="vc-sketch-box"  @click="togglePopover">
+      <div :style="triggerStyles"></div>
     </div>
-    <div class="vc-sketch-controls">
-      <div class="vc-sketch-sliders">
-        <div class="vc-sketch-hue-wrap">
-          <hue v-model="colors" @change="childChange"></hue>  
+    <transition name="vc-sketch-show-hide">
+      <div v-show="isOpen" :class="['vc-sketch', disableAlpha ? 'vc-sketch__disable-alpha' : '']">
+        <div class="vc-sketch-saturation-wrap">
+          <saturation v-model="colors" @change="childChange"></saturation>
         </div>
-        <div class="vc-sketch-alpha-wrap" v-if="!disableAlpha">
-          <alpha v-model="colors" @change="childChange"></alpha>
+        <div class="vc-sketch-controls">
+          <div class="vc-sketch-sliders">
+            <div class="vc-sketch-hue-wrap">
+              <hue v-model="colors" @change="childChange"></hue>  
+            </div>
+            <div class="vc-sketch-alpha-wrap" v-if="!disableAlpha">
+              <alpha v-model="colors" @change="childChange"></alpha>
+            </div>
+          </div>
+          <div class="vc-sketch-color-wrap">
+            <div class="vc-sketch-active-color" :style="{background: activeColor}"></div>
+            <checkboard></checkboard>
+          </div>
+        </div>
+        <div class="vc-sketch-field" v-if="!disableFields">
+          <!-- rgba -->
+          <div class="vc-sketch-field--double">
+            <ed-in label="hex" :value="hex" @change="inputChange"></ed-in>  
+          </div>
+          <div class="vc-sketch-field--single">
+            <ed-in label="r" :value="colors.rgba.r" @change="inputChange"></ed-in>
+          </div>
+          <div class="vc-sketch-field--single">
+            <ed-in label="g" :value="colors.rgba.g" @change="inputChange"></ed-in>
+          </div>
+          <div class="vc-sketch-field--single">
+            <ed-in label="b" :value="colors.rgba.b" @change="inputChange"></ed-in>
+          </div>
+          <div class="vc-sketch-field--single" v-if="!disableAlpha">
+            <ed-in label="a" :value="colors.a" :arrow-offset="0.01" :max="1" @change="inputChange"></ed-in>
+          </div>
+        </div>
+        <div class="vc-sketch-presets">
+          <div class="vc-sketch-presets-color"
+            :aria-label="'color:'+c"
+            v-for="c in presetColors"
+            :key="c"
+            :style="{background: c}"
+            @click="handlePreset(c)">
+          </div>
         </div>
       </div>
-      <div class="vc-sketch-color-wrap">
-        <div class="vc-sketch-active-color" :style="{background: activeColor}"></div>
-        <checkboard></checkboard>
-      </div>
-    </div>
-    <div class="vc-sketch-field" v-if="!disableFields">
-      <!-- rgba -->
-      <div class="vc-sketch-field--double">
-        <ed-in label="hex" :value="hex" @change="inputChange"></ed-in>  
-      </div>
-      <div class="vc-sketch-field--single">
-        <ed-in label="r" :value="colors.rgba.r" @change="inputChange"></ed-in>
-      </div>
-      <div class="vc-sketch-field--single">
-        <ed-in label="g" :value="colors.rgba.g" @change="inputChange"></ed-in>
-      </div>
-      <div class="vc-sketch-field--single">
-        <ed-in label="b" :value="colors.rgba.b" @change="inputChange"></ed-in>
-      </div>
-      <div class="vc-sketch-field--single" v-if="!disableAlpha">
-        <ed-in label="a" :value="colors.a" :arrow-offset="0.01" :max="1" @change="inputChange"></ed-in>
-      </div>
-    </div>
-    <div class="vc-sketch-presets">
-      <div class="vc-sketch-presets-color"
-        :aria-label="'color:'+c"
-        v-for="c in presetColors"
-        :key="c"
-        :style="{background: c}"
-        @click="handlePreset(c)">
-      </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -87,6 +94,11 @@ export default {
       default: false
     }
   },
+  data() {
+    return {
+      internalIsOpen: false
+    }
+  },
   computed: {
     hex () {
       return this.colors.hex.replace('#', '')
@@ -94,6 +106,10 @@ export default {
     activeColor () {
       var rgba = this.colors.rgba
       return 'rgba(' + [rgba.r, rgba.g, rgba.b, rgba.a].join(',') + ')'
+    },
+    isOpen () {
+      if (this.inline) return false
+      return this.internalIsOpen
     }
   },
   methods: {
@@ -124,14 +140,65 @@ export default {
           source: 'rgba'
         })
       }
-    }
+    },
+    hidePopover () {
+      this.internalIsOpen = false
+      this.$el.blur()
+      this.$emit('close', this.internalValue)
+    },
+    // Called by user action
+    onBlur (relatedTarget) {
+      /* istanbul ignore if */
+      if (!this.isOpen) return /* dont hide */
+
+      // We only close the Popover if the relatedTarget came from outside the component
+      // Check if the relatedTarget is inside the component
+      if (relatedTarget !== null && this.$el.contains(relatedTarget)) return /* dont hide */
+
+      this.internalIsOpen = false
+      this.$emit('close', this.internalValue)
+    },
+    onFallbackButtonClick () {
+      this.hidePopover()
+    },
+    // Called programmatically
+    showPopover () {
+      /* istanbul ignore if */
+      if (this.isOpen || this.inline || this.disabled) return /* dont show */
+
+      this.internalIsOpen = true
+      this.$el.focus()
+      this.$emit('open')
+    },
+    togglePopover () {
+      this.isOpen ? this.hidePopover() : this.showPopover()
+    },
+
   }
 }
 </script>
 
 <style>
-.vc-sketch {
+.vc-sketch-container {
+  display: inline-block;
   position: relative;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #dedede;
+  box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  z-index: 20;
+}
+.vc-sketch-box {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+.vc-sketch {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 0;
+  z-index: 90;
   width: 200px;
   padding: 10px 10px 0;
   box-sizing: initial;
@@ -237,5 +304,13 @@ export default {
 
 .vc-sketch__disable-alpha .vc-sketch-color-wrap {
   height: 10px;
+}
+
+/* Transitions */
+.vc-sketch-show-hide-enter-active, .vc-sketch-show-hide-leave-active {
+  transition: all 0.3s ease;
+}
+.vc-sketch-show-hide-enter, .vc-sketch-show-hide-leave-active {
+  opacity: 0;
 }
 </style>
